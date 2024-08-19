@@ -2,7 +2,7 @@ entrada = input("Digite os elementos do vetor: ")
 
 vetor = []  
 for elemento in entrada.split():  
-    vetor.append(int(elemento)) 
+    vetor.append(int(elemento))
 
 sem_duplicatas = []
 for elemento in vetor:
