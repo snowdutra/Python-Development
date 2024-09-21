@@ -1,4 +1,3 @@
-
 #Função para agrupar as palavras por tamanho
 def agrupar(agrupamento, lista):
     for palavra in lista:
