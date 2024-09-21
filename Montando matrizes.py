@@ -1,4 +1,3 @@
-
 matriz = []
 
 ordem = int(input("Insira a ordem da matriz: "))
