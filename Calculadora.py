@@ -1,4 +1,3 @@
-
 # Funçoes sempre no início do código
 def somar():
     #Corpo da função
