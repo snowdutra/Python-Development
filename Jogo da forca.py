@@ -1,3 +1,4 @@
+
 import random
 
 #função para simular o jogo da forca
