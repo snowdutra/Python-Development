@@ -1,4 +1,3 @@
-
 def bubble_sort(transacoes):
     n = len(transacoes)
     for i in range(n):
