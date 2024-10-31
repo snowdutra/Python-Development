@@ -1,5 +1,5 @@
 def carregar():
-    produtos = []
+    produtos = {}
     try:
         with open("produtos.txt", "r") as file:
             for linha in file:
@@ -8,86 +8,89 @@ def carregar():
                 quantidade = ""
                 i = 0
 
+                
                 while i < len(linha) and linha[i] != ';':
                     nome += linha[i]
                     i += 1
-                i += 1 
+                i += 1  
 
                 while i < len(linha) and linha[i] != ';':
                     preco += linha[i]
                     i += 1
-                i += 1  
-
+                i += 1 
+                
                 while i < len(linha) and linha[i] != '\n':
                     quantidade += linha[i]
                     i += 1
 
-                produtos.append((nome, float(preco), int(quantidade)))
+                produtos[nome] = (float(preco), int(quantidade))
     except FileNotFoundError:
         print("Arquivo produtos.txt não encontrado.")
     return produtos
 
 def salvar(produtos):
     with open("produtos.txt", "w") as file:
-        for produto in produtos:
-            file.write(f"{produto[0]};{produto[1]};{produto[2]}\n")
+        for nome in produtos:
+            preco, quantidade = produtos[nome]
+            file.write(f"{nome};{preco};{quantidade}\n")
 
 def ordenar(produtos):
-    for i in range(len(produtos) - 1):
-        for j in range(i + 1, len(produtos)):
-            if produtos[i][1] < produtos[j][1]:
-                produtos[i], produtos[j] = produtos[j], produtos[i]
-            elif produtos[i][1] == produtos[j][1]:
-                if produtos[i][0] > produtos[j][0]:
-                    produtos[i], produtos[j] = produtos[j], produtos[i]
-    return produtos
+    produtos_lista = [(nome, produtos[nome][0], produtos[nome][1]) for nome in produtos]
+
+    
+    n = len(produtos_lista)
+    for i in range(n - 1):
+        for j in range(0, n - i - 1):
+            if produtos_lista[j][1] < produtos_lista[j + 1][1]:
+                produtos_lista[j], produtos_lista[j + 1] = produtos_lista[j + 1], produtos_lista[j]
+            elif produtos_lista[j][1] == produtos_lista[j + 1][1]:
+                if produtos_lista[j][0] > produtos_lista[j + 1][0]:
+                    produtos_lista[j], produtos_lista[j + 1] = produtos_lista[j + 1], produtos_lista[j]
+
+    return produtos_lista
 
 def buscar(nome, produtos):
-    for produto in produtos:
-        if produto[0] == nome:
-            print(f"Produto encontrado: Preço = {produto[1]}, Quantidade em estoque = {produto[2]}")
-            return
-    print("Produto não encontrado.")
+    if nome in produtos:
+        preco, quantidade = produtos[nome]
+        print(f"Produto encontrado: Preço = {preco}, Quantidade em estoque = {quantidade}")
+    else:
+        print("Produto não encontrado.")
 
 def exibir(produtos):
     produtos_ordenados = ordenar(produtos)
     print("Os 5 produtos mais caros são:")
-    for produto in produtos_ordenados[:5]:
-        print(f"Produto: {produto[0]}, Preço: {produto[1]}, Quantidade: {produto[2]}")
+    for nome, preco, quantidade in produtos_ordenados[:5]:
+        print(f"Produto: {nome}, Preço: {preco}, Quantidade: {quantidade}")
 
 def atualizar(nome, quantidade, produtos):
-    for i in range(len(produtos)):
-        if produtos[i][0] == nome:
-            produto_atualizado = (produtos[i][0], produtos[i][1], produtos[i][2] + quantidade)
-            produtos[i] = produto_atualizado
-            print(f"Estoque atualizado: {produto_atualizado[0]} agora tem {produto_atualizado[2]} unidades.")
-            return
-    print("Produto não encontrado.")
+    if nome in produtos:
+        preco, quantidade_atual = produtos[nome]
+        produtos[nome] = (preco, quantidade_atual + quantidade)
+        print(f"Estoque atualizado: {nome} agora tem {produtos[nome][1]} unidades.")
+    else:
+        print("Produto não encontrado.")
 
-def cadatrar(produtos):
+def cadastrar(produtos):
     nome = input("Insira o nome do produto: ")
-    for produto in produtos:
-        if produto[0] == nome:
-            print("Produto já existe no inventário.")
-            return
+    if nome in produtos:
+        print("Produto já existe no inventário.")
+        return
 
     try:
         preco = float(input("Insira o preço do produto: "))
         quantidade = int(input("Insira a quantidade do produto: "))
-        novo_produto = (nome, preco, quantidade)
-        produtos.append(novo_produto)
+        produtos[nome] = (preco, quantidade)
         print(f"Produto '{nome}' cadastrado com sucesso.")
     except ValueError:
         print("Entrada inválida. Certifique-se de inserir um preço e uma quantidade válidos.")
 
 def remover(produtos):
     nome = input("Insira o nome do produto a ser removido: ")
-    for i in range(len(produtos)):
-        if produtos[i][0] == nome:
-            produtos.pop(i)
-            print(f"Produto '{nome}' removido com sucesso.")
-            return
-    print("Produto não encontrado.")
+    if nome in produtos:
+        del produtos[nome]
+        print(f"Produto '{nome}' removido com sucesso.")
+    else:
+        print("Produto não encontrado.")
 
 def menu():
     produtos = carregar()
@@ -105,13 +108,13 @@ def menu():
         opcao = input("Escolha uma opção: ")
         
         if opcao == '1':
-            cadatrar(produtos)
+            cadastrar(produtos)
         
         elif opcao == '2':
-            produtos = ordenar(produtos)
+            produtos_ordenados = ordenar(produtos)
             print("Produtos classificados por preço:")
-            for produto in produtos:
-                print(f"Produto: {produto[0]}, Preço: {produto[1]}, Quantidade: {produto[2]}")
+            for nome, preco, quantidade in produtos_ordenados:
+                print(f"Produto: {nome}, Preço: {preco}, Quantidade: {quantidade}")
         
         elif opcao == '3':
             nome = input("Insira o nome do produto: ")
