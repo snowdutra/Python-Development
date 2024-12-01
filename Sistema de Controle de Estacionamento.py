@@ -1,13 +1,12 @@
 class Proprietario:
     def __init__(self, nome, cpf):
         if not self.validar_cpf(cpf):
-            print("CPF inválido. Digitar o CPF com 11 dígitos numéricos.")
-            exit() 
+            print("CPF inválido. Digite o CPF com 11 dígitos numéricos.")
+            raise ValueError("CPF inválido")
         self.nome = nome
         self.cpf = cpf
 
     def validar_cpf(self, cpf):
-        # Valida se o CPF tem 11 dígitos numéricos
         if len(cpf) != 11:
             return False
         for c in cpf:
@@ -19,16 +18,14 @@ class Proprietario:
 class Veiculo:
     def __init__(self, placa, marca, modelo, proprietario):
         if not self.validar_placa(placa):
-            print("Placa é inválida. Digite no formato Mercosul (ABC1D23).")
-            exit() 
-        self.placa = placa.upper() 
+            print("Placa inválida. Digite no formato Mercosul (ABC1D23) com letras maiúsculas.")
+            raise ValueError("Placa inválida")
+        self.placa = placa
         self.marca = marca
         self.modelo = modelo
         self.proprietario = proprietario
 
     def validar_placa(self, placa):
-        # Validador de placas do Mercosul (ABC1D23)
-        placa = placa.upper() 
         if len(placa) != 7:
             return False
         letras = placa[:3]
@@ -65,56 +62,66 @@ class Controle:
         self.veiculos_estacionados = []
         self.veiculos_saida = []
 
-    def cadastrar_veiculo(self, proprietario, veiculo):
+    def cpf_existe(self, cpf):
         for usuario in self.usuarios:
-            if usuario.cpf == proprietario.cpf:
-                print("CPF já cadastrado!")
-                return
+            if usuario.cpf == cpf:
+                return True
+        return False
+
+    def placa_existe(self, placa):
+        for veiculo in self.veiculos:
+            if veiculo.placa == placa:
+                return True
+        return False
+
+    def cadastrar_veiculo(self, proprietario, veiculo):
+        if self.placa_existe(veiculo.placa):
+            print("Placa já cadastrada, digite uma nova placa.")
+            return
         self.usuarios.append(proprietario)
         self.veiculos.append(veiculo)
         print("Veículo cadastrado com sucesso!")
 
     def registrar_entrada(self, placa, hora, minuto):
+        if not self.placa_existe(placa):
+            print("Placa não cadastrada, registre o veículo.")
+            return 
+
         veiculo = None
         for v in self.veiculos:
-            if v.placa == placa.upper():  
+            if v.placa == placa:
                 veiculo = v
                 break
 
-        if veiculo is None:
-            print("Veículo não cadastrado!")
-        
-        else:
-            self.veiculos_estacionados.append({"veiculo": veiculo, "entrada": Hora(hora, minuto)})
-            print("Entrada registrada com sucesso!")
+        self.veiculos_estacionados.append({"veiculo": veiculo, "entrada": Hora(hora, minuto)})
+        print("Entrada registrada!")
 
     def registrar_saida(self, placa, hora, minuto):
         veiculo_estacionado = None
         for v in self.veiculos_estacionados:
-            if v["veiculo"].placa == placa.upper():  
+            if v["veiculo"].placa == placa:
                 veiculo_estacionado = v
                 break
         
         if veiculo_estacionado is None:
             print("Veículo não encontrado no estacionamento!")
-        
-        else:
-            entrada = veiculo_estacionado["entrada"]
-            saida = Hora(hora, minuto)
-            tempo_minutos = saida.calcular_minutos() - entrada.calcular_minutos()
-            valor = tempo_minutos * 0.20
-            self.veiculos_saida.append({
-                "veiculo": veiculo_estacionado["veiculo"],
-                "entrada": entrada,
-                "saida": saida,
-                "valor": valor
-            })
-            self.veiculos_estacionados.remove(veiculo_estacionado)
-            print(f"Saída registrada com sucesso! Valor a pagar: R$ {valor:.2f}")
+            return
+
+        entrada = veiculo_estacionado["entrada"]
+        saida = Hora(hora, minuto)
+        tempo_minutos = saida.calcular_minutos() - entrada.calcular_minutos()
+        valor = tempo_minutos * 0.20
+        self.veiculos_saida.append({
+            "veiculo": veiculo_estacionado["veiculo"],
+            "entrada": entrada,
+            "saida": saida,
+            "valor": valor
+        })
+        self.veiculos_estacionados.remove(veiculo_estacionado)
+        print(f"Saída registrada com sucesso! Valor a pagar: R$ {valor:.2f}")
 
     def listagem(self):
         print("\nVeículos Estacionados:")
-       
         for veiculo in self.veiculos_estacionados:
             print(f"Proprietário: {veiculo['veiculo'].proprietario.nome}, Placa: {veiculo['veiculo'].placa}, Entrada: {veiculo['entrada']}")
 
@@ -136,28 +143,49 @@ def menu():
         opcao = input("Escolha uma opção: ")
 
         if opcao == "1":
-            nome = input("Nome do proprietário: ")
-            cpf = input("CPF do proprietário (11 dígitos): ")
-            proprietario = Proprietario(nome, cpf)
-            
-            placa = input("Placa do veículo (ABC1D23): ")
-            veiculo = Veiculo(placa, None, None, proprietario)
-            
-            marca = input("Marca do veículo: ")
-            modelo = input("Modelo do veículo: ")
-            veiculo.marca = marca
-            veiculo.modelo = modelo
-            
-            controle.cadastrar_veiculo(proprietario, veiculo)
+            try:
+                nome = input("Nome do proprietário: ")
+                cpf = input("CPF do proprietário (11 dígitos): ")
+                
+                if controle.cpf_existe(cpf):
+                    print("CPF já cadastrado! O cadastro será interrompido.")
+                    continue  
+                
+                proprietario = Proprietario(nome, cpf)
+                
+                placa = input("Placa do veículo (ABC1D23 - letras maiúsculas): ")
+                if controle.placa_existe(placa):
+                    print("Placa já cadastrada, digite a placa novamente.")
+                    continue 
+                
+                veiculo = Veiculo(placa, None, None, proprietario)
+                
+                marca = input("Marca do veículo: ")
+                modelo = input("Modelo do veículo: ")
+                veiculo.marca = marca
+                veiculo.modelo = modelo
+                
+                controle.cadastrar_veiculo(proprietario, veiculo)
+            except ValueError:
+                continue
         
         elif opcao == "2":
-            placa = input("Placa do veículo (Ex: ABC1D23): ")
+            placa = input("Placa do veículo (ABC1D23 - letras maiúsculas): ")
+            
+            if not controle.placa_existe(placa):
+                print("Placa não cadastrada, realize o cadastro do veículo.")
+                continue  
+            
             hora = int(input("Hora de entrada (hh): "))
             minuto = int(input("Minuto de entrada (mm): "))
             controle.registrar_entrada(placa, hora, minuto)
         
         elif opcao == "3":
-            placa = input("Placa do veículo (Ex: ABC1D23): ")
+            placa = input("Placa do veículo (ABC1D23 - letras maiúsculas): ")
+            if not controle.placa_existe(placa):
+                print("Placa não cadastrada, realize o cadastro do veículo.")
+                continue
+
             hora = int(input("Hora de saída (hh): "))
             minuto = int(input("Minuto de saída (mm): "))
             controle.registrar_saida(placa, hora, minuto)
@@ -171,6 +199,5 @@ def menu():
         
         else:
             print("Opção inválida!")
-
 
 menu()
